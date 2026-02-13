@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/godalida/koala-diff/main/assets/report_hero.jpg" alt="Koala Diff Report Hero" width="800">
+  <img src="https://raw.githubusercontent.com/godalida/koala-diff/main/assets/report_hero.png" alt="Koala Diff Report Hero" width="800">
 </p>
 
 <p align="center">
