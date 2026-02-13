@@ -5,7 +5,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 use pyo3::wrap_pyfunction;
 use polars::prelude::*;
-use std::ops::{BitOr, Not};
+use std::ops::Not;
 
 /// Compares two CSV or Parquet files and returns a difference summary
 /// 
@@ -70,7 +70,7 @@ fn diff_files<'py>(
 
 
     // 2.3 Per-Column Advanced Statistics
-    let mut column_stats = PyDict::new(py);
+    let column_stats = PyDict::new(py);
     let mut total_modified_mask: Option<BooleanChunked> = None;
 
     let schema_a = df_a.schema();
@@ -80,7 +80,7 @@ fn diff_files<'py>(
         let name_str = col_name.as_str();
         let is_key = keys.contains(&name_str);
         
-        let mut stats = PyDict::new(py);
+        let stats = PyDict::new(py);
         stats.set_item("column_name", name_str)?;
         stats.set_item("is_key", is_key)?;
         stats.set_item("source_dtype", format!("{:?}", dtype_a))?;
@@ -117,7 +117,7 @@ fn diff_files<'py>(
                 // Max Value Diff (if numeric)
                 if dtype_a.is_numeric() && dtype_b.is_numeric() {
                     if let (Ok(l), Ok(r)) = (s_left.cast(&DataType::Float64), s_right.cast(&DataType::Float64)) {
-                         if let Ok(diff) = (&l - &r) {
+                         if let Ok(diff) = &l - &r {
                              let max_val = diff.max::<f64>().map(|o| o.unwrap_or(0.0)).unwrap_or(0.0);
                              let min_val = diff.min::<f64>().map(|o| o.unwrap_or(0.0)).unwrap_or(0.0);
                              let max_abs_diff = if max_val.abs() > min_val.abs() { max_val.abs() } else { min_val.abs() };
