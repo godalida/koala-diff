@@ -20,7 +20,9 @@ use std::collections::HashSet;
 ///         "matched": int,
 ///         "added": int,
 ///         "removed": int,
-///         "modified_cols": list[str]
+///         "modified_cols": list[str],
+///         "schema_diff": list[dict],  // New!
+///         "null_counts": dict,        // New! { "col_name": [nulls_in_a, nulls_in_b] }
 ///     }
 #[pyfunction]
 fn diff_files(py: Python, file_a: String, file_b: String, key_cols: Vec<String>) -> PyResult<PyObject> {
@@ -51,6 +53,42 @@ fn diff_files(py: Python, file_a: String, file_b: String, key_cols: Vec<String>)
     let added = if height_b > height_a { height_b - height_a } else { 0 };
     let removed = if height_a > height_b { height_a - height_b } else { 0 };
 
+    // --- NEW: Calculate Statistics ---
+    
+    // Schema Check
+    let schema_a = df_a.schema();
+    let schema_b = df_b.schema();
+    let mut schema_diff = Vec::new();
+    
+    for (name, dtype) in schema_a.iter() {
+        if let Some(dtype_b) = schema_b.get(name) {
+            if dtype != dtype_b {
+                let diff = pyo3::types::PyDict::new(py);
+                diff.set_item("column", name.as_str())?;
+                diff.set_item("type_a", format!("{:?}", dtype))?;
+                diff.set_item("type_b", format!("{:?}", dtype_b))?;
+                schema_diff.push(diff);
+            }
+        }
+    }
+
+    // Null Counts
+    let null_counts = pyo3::types::PyDict::new(py);
+    for col in df_a.get_column_names() {
+        if let Ok(s_a) = df_a.column(col) {
+             let count_a = s_a.null_count();
+             // Check B
+             let count_b = match df_b.column(col) {
+                 Ok(s_b) => s_b.null_count(),
+                 Err(_) => 0 // Column missing in B
+             };
+             
+             let counts = vec![count_a, count_b];
+             null_counts.set_item(col, counts)?;
+        }
+    }
+
+
     // 3. Return Python Dict
     let dict = pyo3::types::PyDict::new(py);
     dict.set_item("total_rows_a", height_a)?;
@@ -59,6 +97,8 @@ fn diff_files(py: Python, file_a: String, file_b: String, key_cols: Vec<String>)
     dict.set_item("added", added)?;
     dict.set_item("removed", removed)?;
     dict.set_item("modified_cols", vec!["status", "balance"])?; // Dummy data
+    dict.set_item("schema_diff", schema_diff)?; // New!
+    dict.set_item("null_counts", null_counts)?; // New!
 
     Ok(dict.to_object(py))
 }

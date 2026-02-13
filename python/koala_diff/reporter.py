@@ -42,6 +42,7 @@ class HtmlReporter:
                 table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
                 th, td { text-align: left; padding: 0.75rem; border-bottom: 1px solid #dee2e6; }
                 th { background-color: #f8f9fa; }
+                .alert-row { background-color: #ffe8cc; color: #d9480f; }
             </style>
         </head>
         <body>
@@ -78,6 +79,30 @@ class HtmlReporter:
                             <div class="stat-label">Removed Rows</div>
                         </div>
                     </div>
+                </div>
+
+                <div class="card">
+                    <h2>Column Statistics</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Column</th>
+                                <th>Nulls (A)</th>
+                                <th>Nulls (B)</th>
+                                <th>Change</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for col, counts in null_counts.items() %}
+                            <tr {% if counts[0] != counts[1] %}class="alert-row"{% endif %}>
+                                <td>{{ col }}</td>
+                                <td>{{ counts[0] }}</td>
+                                <td>{{ counts[1] }}</td>
+                                <td>{{ counts[1] - counts[0] }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
 
                 <div class="card">

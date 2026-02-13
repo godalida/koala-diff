@@ -15,8 +15,8 @@
   <a href="https://pepy.tech/project/koala-diff">
     <img src="https://img.shields.io/pepy/dt/koala-diff?style=flat-square&color=blue" alt="Downloads">
   </a>
-  <a href="https://github.com/koala-flow/koala-diff/actions">
-    <img src="https://img.shields.io/github/actions/workflow/status/koala-flow/koala-diff/CI.yml?branch=main&style=flat-square" alt="Tests">
+  <a href="https://github.com/godalida/koala-diff/actions">
+    <img src="https://img.shields.io/github/actions/workflow/status/godalida/koala-diff/CI.yml?branch=main&style=flat-square" alt="Tests">
   </a>
   <a href="https://opensource.org/licenses/MIT">
     <img src="https://img.shields.io/pypi/l/koala-diff" alt="License">
