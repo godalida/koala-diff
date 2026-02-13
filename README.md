@@ -10,13 +10,13 @@
 
 <p align="center">
   <a href="https://pypi.org/project/koala-diff/">
-    <img src="https://img.shields.io/pypi/v/koala-diff?color=green&style=flat-square" alt="PyPI">
+    <img src="https://img.shields.io/pypi/v/koala-diff?color=green" alt="PyPI">
   </a>
   <a href="https://pepy.tech/project/koala-diff">
-    <img src="https://img.shields.io/pepy/dt/koala-diff?style=flat-square&color=blue" alt="Downloads">
+    <img src="https://img.shields.io/pepy/dt/koala-diff?color=blue" alt="Downloads">
   </a>
   <a href="https://github.com/godalida/koala-diff/actions">
-    <img src="https://img.shields.io/github/actions/workflow/status/godalida/koala-diff/CI.yml?branch=main&style=flat-square" alt="Tests">
+    <img src="https://img.shields.io/github/actions/workflow/status/godalida/koala-diff/CI.yml?branch=main" alt="Tests">
   </a>
   <a href="https://opensource.org/licenses/MIT">
     <img src="https://img.shields.io/pypi/l/koala-diff" alt="License">
@@ -100,4 +100,4 @@ We welcome contributions! Whether it's a new file format reader, a performance o
 
 ## 📄 License
 
-MIT © 2026 godalida](https://github.com/godalida) - [KoalaDataLab](https://koaladatalab.com)
+MIT © 2026 [godalida](https://github.com/godalida) - [KoalaDataLab](https://koaladatalab.com)
