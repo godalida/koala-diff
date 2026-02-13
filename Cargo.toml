@@ -10,7 +10,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 pyo3 = { version = "0.20", features = ["extension-module"] }
-polars = { version = "0.41", features = ["lazy", "parquet", "csv-file", "dtype-struct"] }
+polars = { version = "0.41", features = ["lazy", "parquet", "csv", "dtype-struct"] }
 thiserror = "1.0"
 indicatif = "0.17" # Progress bar
 ahash = "0.8"      # Fast hashing
