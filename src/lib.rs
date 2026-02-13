@@ -102,7 +102,7 @@ fn diff_files<'py>(
                 let s_left = col_left.as_materialized_series();
                 let s_right = col_right.as_materialized_series();
 
-                let is_equal = s_left.equal(s_right).map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
+                let is_equal = s_left.equal_missing(s_right).map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
                 let is_diff = is_equal.not();
                 
                 let diff_count = is_diff.sum().unwrap_or(0) as usize;

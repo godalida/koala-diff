@@ -5,6 +5,7 @@ import base64
 from pathlib import Path
 from jinja2 import Environment, FileSystemLoader, select_autoescape, Template
 import os
+from . import __version__
 
 class HtmlReporter:
     """
@@ -316,7 +317,7 @@ class HtmlReporter:
                             {% endif %}
                         </div>
                         <div class="title-area">
-                            <h1>Koala Diff</h1>
+                            <h1>Koala Diff <small style="font-size: 11px; vertical-align: middle; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; margin-left: 8px; color: #64748b;">v{{ version }}</small></h1>
                             <p>Data Quality & Comparison Report</p>
                         </div>
                     </div>
@@ -443,9 +444,10 @@ class HtmlReporter:
                                     <td>
                                         <div class="match-rate-container" style="width: 100%;">
                                             <div class="progress-track">
-                                                <div class="progress-fill" style="width: {{ stats.match_rate }}%; background: {% if stats.match_rate == 100 %}var(--success){% elif stats.match_rate > 90 %}var(--warning){% else %}var(--danger){% endif %};"></div>
+                                                {% set m_rate = stats.match_rate | default(0) %}
+                                                <div class="progress-fill" style="width: {{ m_rate }}%; background: {% if m_rate == 100 %}var(--success){% elif m_rate > 90 %}var(--warning){% else %}var(--danger){% endif %};"></div>
                                             </div>
-                                            <div class="rate-label" style="width: 35px;">{{ "%.1f"|format(stats.match_rate) }}%</div>
+                                            <div class="rate-label" style="width: 35px;">{{ "%.1f"|format(m_rate) }}%</div>
                                         </div>
                                     </td>
                                     <td>
@@ -544,7 +546,7 @@ print(mismatch_df.head())</pre>
 
                 <!-- Footer Meta -->
                 <footer style="margin-top: 60px; text-align: center; color: var(--text-muted); font-size: 12px; border-top: 1px solid var(--border); padding-top: 32px;">
-                    <p>© 2026 Koala-Diff Analytics. Built for high-performance data engineering pipelines.</p>
+                    <p>© 2026 Koala-Diff Analytics v{{ version }}. Built for high-performance data engineering pipelines.</p>
                 </footer>
             </div>
         </body>
@@ -552,7 +554,7 @@ print(mismatch_df.head())</pre>
         """
         
         template = Template(template_str)
-        html_out = template.render(title=title, logo_b64=logo_b64, **diff_result)
+        html_out = template.render(title=title, logo_b64=logo_b64, version=__version__, **diff_result)
         
         with open(self.output_path, "w") as f:
             f.write(html_out)

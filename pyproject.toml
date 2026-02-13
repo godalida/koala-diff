@@ -4,13 +4,13 @@ build-backend = "maturin"
 
 [project]
 name = "koala-diff"
-version = "0.2.0"
+version = "0.2.1"
 description = "High-performance data diff tool in Rust."
 readme = "README.md"
 authors = [
     { name = "Glenn Dalida", email = "dalidaglenno6452@gmail.com" }
 ]
-license = { file = "LICENSE" }
+license = "MIT"
 requires-python = ">=3.10"
 keywords = ["data-diff", "rust", "polars", "data-quality", "regression-testing", "parquet", "csv"]
 dependencies = [
