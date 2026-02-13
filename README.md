@@ -100,4 +100,4 @@ We welcome contributions! Whether it's a new file format reader, a performance o
 
 ## 📄 License
 
-MIT © 2026 Koala Diff Maintainers
+MIT © 2026 godalida](https://github.com/godalida) - [KoalaDataLab](https://koaladatalab.com)
