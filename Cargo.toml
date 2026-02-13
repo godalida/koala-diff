@@ -9,7 +9,7 @@ name = "koala_diff"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = { version = "0.20", features = ["extension-module"] }
+pyo3 = { version = "0.28.0", features = ["extension-module"] }
 polars = { version = "0.53", features = ["lazy", "parquet", "csv", "dtype-struct"] }
 thiserror = "1.0"
 indicatif = "0.17" # Progress bar

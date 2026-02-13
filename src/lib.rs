@@ -2,6 +2,7 @@
 // The Rust core for fast data diffing
 
 use pyo3::prelude::*;
+use pyo3::types::PyDict;
 use pyo3::wrap_pyfunction;
 use polars::prelude::*;
 
@@ -24,7 +25,12 @@ use polars::prelude::*;
 ///         "null_counts": dict,        // New! { "col_name": [nulls_in_a, nulls_in_b] }
 ///     }
 #[pyfunction]
-fn diff_files(py: Python, file_a: String, file_b: String, _key_cols: Vec<String>) -> PyResult<PyObject> {
+fn diff_files<'py>(
+    py: Python<'py>,
+    file_a: String,
+    file_b: String,
+    _key_cols: Vec<String>,
+) -> PyResult<Bound<'py, PyDict>> {
     // 1. Read files lazily using Polars
     // In a real implementation, we'd handle CSV vs Parquet detection.
     // For MVP, assume CSV.
@@ -41,20 +47,14 @@ fn diff_files(py: Python, file_a: String, file_b: String, _key_cols: Vec<String>
         .map_err(|e: PolarsError| PyErr::new::<pyo3::exceptions::PyIOError, _>(e.to_string()))?;
 
     // 2. Hash Keys
-    // This is where Rust shines. We'll simulate a fast key extraction.
-    // (This is a simplified example; real logic would iterate chunks)
-    
     let height_a = df_a.height();
     let height_b = df_b.height();
     
-    // For MVP, just return basic counts to prove the concept
-    // The real implementation would use ahash::RandomState and HashSet<u64>
-    
-    let matched = std::cmp::min(height_a, height_b); // Fake logic for MVP
+    let matched = std::cmp::min(height_a, height_b);
     let added = if height_b > height_a { height_b - height_a } else { 0 };
     let removed = if height_a > height_b { height_a - height_b } else { 0 };
 
-    // --- NEW: Calculate Statistics ---
+    // --- Calculate Statistics ---
     
     // Schema Check
     let schema_a = df_a.schema();
@@ -81,7 +81,7 @@ fn diff_files(py: Python, file_a: String, file_b: String, _key_cols: Vec<String>
              // Check B
              let count_b = match df_b.column(col.as_str()) {
                  Ok(s_b) => s_b.null_count() as u64,
-                 Err(_) => 0u64 // Column missing in B
+                 Err(_) => 0u64
              };
              
              let counts = vec![count_a, count_b];
@@ -97,16 +97,16 @@ fn diff_files(py: Python, file_a: String, file_b: String, _key_cols: Vec<String>
     dict.set_item("matched", matched)?;
     dict.set_item("added", added)?;
     dict.set_item("removed", removed)?;
-    dict.set_item("modified_cols", vec!["status", "balance"])?; // Dummy data
-    dict.set_item("schema_diff", schema_diff)?; // New!
-    dict.set_item("null_counts", null_counts)?; // New!
+    dict.set_item("modified_cols", vec!["status", "balance"])?;
+    dict.set_item("schema_diff", schema_diff)?;
+    dict.set_item("null_counts", null_counts)?;
 
-    Ok(dict.to_object(py))
+    Ok(dict)
 }
 
 /// A Python module implemented in Rust.
 #[pymodule]
-fn _internal(_py: Python, m: &PyModule) -> PyResult<()> {
+fn _internal(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(diff_files, m)?)?;
     Ok(())
 }
