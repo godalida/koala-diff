@@ -27,7 +27,7 @@
 
 **Koala Diff** is the "git diff" for your data lake. It compares massive datasets (CSV, Parquet, JSON) instantly to find added, removed, and modified rows.
 
-Built in **Rust** 🦀 for speed, wrapped in **Python** 🐍 for ease of use. It streams data to compare datasets larger than RAM and generates beautiful HTML reports.
+Built in **Rust** 🦀 for speed, wrapped in **Python** 🐍 for ease-of-use. It streams data to compare datasets larger than RAM and generates beautiful HTML reports.
 
 ### 🚀 Why Koala Diff?
 
