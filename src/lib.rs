@@ -1,19 +1,19 @@
 // koala-diff/src/lib.rs
 // The Rust core for fast data diffing
 
+use polars::prelude::*;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 use pyo3::wrap_pyfunction;
-use polars::prelude::*;
 use std::ops::Not;
 
 /// Compares two CSV or Parquet files and returns a difference summary
-/// 
+///
 /// Args:
 ///     file_a (str): Path to first file
 ///     file_b (str): Path to second file
 ///     key_cols (list[str]): Columns to join on
-/// 
+///
 /// Returns:
 ///     dict: {
 ///         "total_rows_a": int,
@@ -34,16 +34,30 @@ fn diff_files<'py>(
 ) -> PyResult<Bound<'py, PyDict>> {
     // 1. Read files lazily using Polars
     let read_df = |path: &str| -> PyResult<DataFrame> {
-        if path.ends_with(".parquet") {
-            ParquetReader::new(std::fs::File::open(path).map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(e.to_string()))?)
-                .finish()
-                .map_err(|e: PolarsError| PyErr::new::<pyo3::exceptions::PyIOError, _>(e.to_string()))
+        if path.ends_with(".parquet") || path.ends_with(".pq") {
+            ParquetReader::new(
+                std::fs::File::open(path)
+                    .map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(e.to_string()))?,
+            )
+            .finish()
+            .map_err(|e: PolarsError| PyErr::new::<pyo3::exceptions::PyIOError, _>(e.to_string()))
+        } else if path.ends_with(".json") || path.ends_with(".jsonl") || path.ends_with(".ndjson") {
+            JsonReader::new(
+                std::fs::File::open(path)
+                    .map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(e.to_string()))?,
+            )
+            .finish()
+            .map_err(|e: PolarsError| PyErr::new::<pyo3::exceptions::PyIOError, _>(e.to_string()))
         } else {
             CsvReadOptions::default()
                 .try_into_reader_with_file_path(Some(path.into()))
-                .map_err(|e: PolarsError| PyErr::new::<pyo3::exceptions::PyIOError, _>(e.to_string()))?
+                .map_err(|e: PolarsError| {
+                    PyErr::new::<pyo3::exceptions::PyIOError, _>(e.to_string())
+                })?
                 .finish()
-                .map_err(|e: PolarsError| PyErr::new::<pyo3::exceptions::PyIOError, _>(e.to_string()))
+                .map_err(|e: PolarsError| {
+                    PyErr::new::<pyo3::exceptions::PyIOError, _>(e.to_string())
+                })
         }
     };
 
@@ -56,18 +70,26 @@ fn diff_files<'py>(
     // 2.1 Matches and Modifications
     // Join A and B to find common rows and then compare columns
     let join_args = JoinArgs::new(JoinType::Inner).with_suffix(Some("_right".into()));
-    let inner_df = df_a.join(&df_b, &keys, &keys, join_args, None)
+    let inner_df = df_a
+        .join(&df_b, &keys, &keys, join_args, None)
         .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
-    
+
     let matched = inner_df.height();
 
     // 2.2 Deriving Added and Removed from Row Counts (Safe for unique keys)
     let height_a = df_a.height();
     let height_b = df_b.height();
-    
-    let removed = if height_a > matched { height_a - matched } else { 0 };
-    let added = if height_b > matched { height_b - matched } else { 0 };
 
+    let removed = if height_a > matched {
+        height_a - matched
+    } else {
+        0
+    };
+    let added = if height_b > matched {
+        height_b - matched
+    } else {
+        0
+    };
 
     // 2.3 Per-Column Advanced Statistics
     let column_stats = PyDict::new(py);
@@ -79,7 +101,7 @@ fn diff_files<'py>(
     for (col_name, dtype_a) in schema_a.iter() {
         let name_str = col_name.as_str();
         let is_key = keys.contains(&name_str);
-        
+
         let stats = PyDict::new(py);
         stats.set_item("column_name", name_str)?;
         stats.set_item("is_key", is_key)?;
@@ -95,16 +117,22 @@ fn diff_files<'py>(
                 stats.set_item("match_rate", 100.0)?;
                 stats.set_item("all_match", true)?;
             } else {
-                let col_left = inner_df.column(name_str).map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
+                let col_left = inner_df.column(name_str).map_err(|e| {
+                    PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string())
+                })?;
                 let right_name = format!("{}_right", name_str);
-                let col_right = inner_df.column(&right_name).map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
+                let col_right = inner_df.column(&right_name).map_err(|e| {
+                    PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string())
+                })?;
 
                 let s_left = col_left.as_materialized_series();
                 let s_right = col_right.as_materialized_series();
 
-                let is_equal = s_left.equal_missing(s_right).map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
+                let is_equal = s_left.equal_missing(s_right).map_err(|e| {
+                    PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string())
+                })?;
                 let is_diff = is_equal.not();
-                
+
                 let diff_count = is_diff.sum().unwrap_or(0) as usize;
                 let match_count = matched - diff_count;
                 let match_rate = (match_count as f64 / matched as f64) * 100.0;
@@ -116,13 +144,22 @@ fn diff_files<'py>(
 
                 // Max Value Diff (if numeric)
                 if dtype_a.is_numeric() && dtype_b.is_numeric() {
-                    if let (Ok(l), Ok(r)) = (s_left.cast(&DataType::Float64), s_right.cast(&DataType::Float64)) {
-                         if let Ok(diff) = &l - &r {
-                             let max_val = diff.max::<f64>().map(|o| o.unwrap_or(0.0)).unwrap_or(0.0);
-                             let min_val = diff.min::<f64>().map(|o| o.unwrap_or(0.0)).unwrap_or(0.0);
-                             let max_abs_diff = if max_val.abs() > min_val.abs() { max_val.abs() } else { min_val.abs() };
-                             stats.set_item("max_value_diff", max_abs_diff)?;
-                         }
+                    if let (Ok(l), Ok(r)) = (
+                        s_left.cast(&DataType::Float64),
+                        s_right.cast(&DataType::Float64),
+                    ) {
+                        if let Ok(diff) = &l - &r {
+                            let max_val =
+                                diff.max::<f64>().map(|o| o.unwrap_or(0.0)).unwrap_or(0.0);
+                            let min_val =
+                                diff.min::<f64>().map(|o| o.unwrap_or(0.0)).unwrap_or(0.0);
+                            let max_abs_diff = if max_val.abs() > min_val.abs() {
+                                max_val.abs()
+                            } else {
+                                min_val.abs()
+                            };
+                            stats.set_item("max_value_diff", max_abs_diff)?;
+                        }
                     }
                 }
 
@@ -138,12 +175,14 @@ fn diff_files<'py>(
                         None => Some(is_diff.clone()),
                     };
 
-                    let mismatched_df = inner_df.filter(&is_diff).map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?;
+                    let mismatched_df = inner_df.filter(&is_diff).map_err(|e| {
+                        PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string())
+                    })?;
                     let sample_head = mismatched_df.head(Some(5));
-                    
+
                     let sample_keys = pyo3::types::PyList::empty(py);
                     let sample_values = pyo3::types::PyList::empty(py);
-                    
+
                     for i in 0..sample_head.height() {
                         let mut key_map = String::new();
                         for k in &keys {
@@ -168,7 +207,10 @@ fn diff_files<'py>(
     }
 
     let modified_rows_count = match &total_modified_mask {
-        Some(mask) => inner_df.filter(mask).map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?.height(),
+        Some(mask) => inner_df
+            .filter(mask)
+            .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))?
+            .height(),
         None => 0,
     };
     let identical_rows_count = matched - modified_rows_count;

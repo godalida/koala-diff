@@ -54,8 +54,12 @@ class DataDiff:
             
         # Read files
         def read_df(path):
-            if path.endswith(".parquet"):
+            if path.endswith(".parquet") or path.endswith(".pq"):
                 return pl.read_parquet(path)
+            if path.endswith(".json"):
+                return pl.read_json(path)
+            if path.endswith(".jsonl") or path.endswith(".ndjson"):
+                return pl.read_ndjson(path)
             return pl.read_csv(path)
 
         df_a = read_df(self.file_a)

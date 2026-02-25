@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "koala-diff"
-version = "0.2.2"
+version = "0.2.3"
 description = "High-performance data diff tool in Rust."
 readme = "README.md"
 authors = [

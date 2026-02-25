@@ -1,6 +1,6 @@
 [package]
 name = "koala_diff"
-version = "0.2.2"
+version = "0.2.3"
 edition = "2021"
 description = "Blazingly fast data comparison tool for Python."
 
@@ -10,7 +10,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 pyo3 = { version = "0.28.0", features = ["extension-module"] }
-polars = { version = "0.53", features = ["lazy", "parquet", "csv", "dtype-struct"] }
+polars = { version = "0.53", features = ["lazy", "parquet", "csv", "json", "dtype-struct", "dtype-decimal", "dtype-datetime", "dtype-date", "dtype-duration", "dtype-time", "dtype-array", "dtype-categorical"] }
 thiserror = "1.0"
 indicatif = "0.17" # Progress bar
 ahash = "0.8"      # Fast hashing
